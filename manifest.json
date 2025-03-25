@@ -1,6 +1,6 @@
 {
-    "name": "Harakat",
-    "description": "Harakat (حَرَکَت) shows the pronunciation and English definition of Persian (Farsi) words when you hover over text in the browser.",
+    "name": "Harakat: Persian Reading Helper",
+    "description": "Harakat (حَرَکَت) shows the pronunciations and English definitions of words when you hover over Persian (Farsi) text in the browser.",
     "version": "1.0",
     "manifest_version": 3,
     "action": {
