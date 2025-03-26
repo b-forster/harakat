@@ -9,26 +9,26 @@ Inspired by [rikaikun](https://chromewebstore.google.com/detail/rikaikun/jipdnfi
 ## Features
 
 - Detects Persian text on any webpage
-- Shows translations when hovering over Persian words
+- Shows both Latin alphabet transliterations and English translations when hovering over Persian words
 - Clean, unobtrusive tooltip design
 - Toggle extension on/off from popup
 
 ## Setup
 
-### API Key Configuration
+### Azure Translator API Configuration
 
-This extension requires a Google Cloud Translation API key to function:
+This extension requires an Azure Translator API key to function:
 
-1. Create a project in the [Google Cloud Console](https://console.cloud.google.com/)
-2. Enable the Cloud Translation API
-3. Create an API key in "APIs & Services" > "Credentials"
+1. Create an Azure account if you don't have one
+2. Create a Translator resource in the Azure portal
+3. Get your API key, endpoint, and region from the Azure portal
 4. Copy `config.example.js` to `config.js`
-5. Replace `YOUR_GOOGLE_TRANSLATE_API_KEY_HERE` with your actual API key
+5. Replace the placeholder values with your actual Azure Translator API key, endpoint, and region
 
 ### Installation
 
 1. Clone this repository
-2. Configure your API key as described above
+2. Configure your Azure API key as described above
 3. Open Chrome and navigate to `chrome://extensions/`
 4. Enable "Developer mode"
 5. Click "Load unpacked" and select the extension directory
@@ -36,16 +36,15 @@ This extension requires a Google Cloud Translation API key to function:
 ## Security Notes
 
 - The `config.js` file is excluded from version control via `.gitignore`
-- Always restrict your API key in the Google Cloud Console:
-  - Limit to the Translation API only
+- Always restrict your Azure API key in the Azure portal:
   - Set usage quotas
-  - Restrict by website/referrer (your extension ID)
+  - Configure network restrictions if needed
 
 ## Tech Stack
 
 - JavaScript
 - Chrome Extension APIs
-- Google Translation API
+- Azure Translator API
 
 ## Acknowledgements
 
@@ -53,6 +52,3 @@ This extension requires a Google Cloud Translation API key to function:
 - Icon by [icons8](https://icons8.com/)
 - Inspired by [rikaikun](https://chromewebstore.google.com/detail/rikaikun/jipdnfibhldikgcjhfnomkfpcebammhp) and [Zhongwen](https://chromewebstore.google.com/detail/zhongwen-chinese-english/kkmlkkjojmombglmlpbpapmhcaljjkde)
 
-## Disclaimer
-
-THIS SERVICE MAY CONTAIN TRANSLATIONS POWERED BY GOOGLE. GOOGLE DISCLAIMS ALL WARRANTIES RELATED TO THE TRANSLATIONS, EXPRESS OR IMPLIED, INCLUDING ANY WARRANTIES OF ACCURACY, RELIABILITY, AND ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.

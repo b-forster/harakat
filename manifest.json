@@ -27,8 +27,7 @@
     "web_accessible_resources": [
         {
             "resources": [
-                "config.js",
-                "assets/images/google-translate.png"
+                "config.js"
             ],
             "matches": [
                 "<all_urls>"

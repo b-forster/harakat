@@ -11,8 +11,8 @@ function isExtensionContextValid() {
     }
 }
 
-// Get translation from background script
-function getTranslation(text) {
+// Get translation and transliteration from background script
+function getTranslationAndTransliteration(text) {
     return new Promise((resolve, reject) => {
         // Check if extension context is valid
         if (!isExtensionContextValid()) {
@@ -42,8 +42,11 @@ function getTranslation(text) {
                 // Process the response
                 if (response && response.error) {
                     reject(new Error(response.error));
-                } else if (response && response.translation) {
-                    resolve(response.translation);
+                } else if (response && response.translation && response.transliteration) {
+                    resolve({
+                        translation: response.translation,
+                        transliteration: response.transliteration
+                    });
                 } else {
                     reject(new Error('Invalid response from background script'));
                 }
@@ -82,16 +85,6 @@ function getWordAtPosition(element, x, y) {
     return null;
 }
 
-// Get Google Translate footer HTML
-function getGoogleTranslateFooter() {
-    return `
-    <div class="harakat-footer">
-        <a href="http://translate.google.com" target="_blank" class="harakat-attribution">
-            <img src="${chrome.runtime.getURL('assets/images/google-translate.png')}" alt="Powered by Google Translate" class="harakat-google-logo">
-        </a>
-    </div>`;
-}
-
 // Create and show tooltip
 async function showTooltip(word, x, y) {
     // Remove any existing tooltips
@@ -110,7 +103,6 @@ async function showTooltip(word, x, y) {
         <div class="harakat-content">
             <div class="harakat-word">${word}</div>
             <div class="harakat-loading">Loading...</div>
-            ${getGoogleTranslateFooter()}
         </div>
     `;
 
@@ -118,16 +110,15 @@ async function showTooltip(word, x, y) {
     document.body.appendChild(tooltip);
 
     try {
-        // Get translation from background script
-        const translation = await getTranslation(word);
+        // Get translation and transliteration from background script
+        const result = await getTranslationAndTransliteration(word);
 
         if (document.getElementById('harakat-tooltip')) {
             tooltip.innerHTML = `
             <div class="harakat-content">
               <div class="harakat-word">${word}</div>
-              <div class="harakat-pronunciation">Pronunciation placeholder</div>
-              <div class="harakat-definition">${translation}</div>
-              ${getGoogleTranslateFooter()}
+              <div class="harakat-pronunciation">${result.transliteration}</div>
+              <div class="harakat-definition">${result.translation}</div>
             </div>
           `;
         }
@@ -139,7 +130,6 @@ async function showTooltip(word, x, y) {
                 <div class="harakat-content">
                   <div class="harakat-word">${word}</div>
                   <div class="harakat-error">Extension reloaded. Please refresh the page.</div>
-                  ${getGoogleTranslateFooter()}
                 </div>
               `;
             } else {
@@ -147,7 +137,6 @@ async function showTooltip(word, x, y) {
                 <div class="harakat-content">
                   <div class="harakat-word">${word}</div>
                   <div class="harakat-error">Error: ${error.message}</div>
-                  ${getGoogleTranslateFooter()}
                 </div>
               `;
             }
