@@ -1,5 +1,9 @@
 {
   "dependencies": {
+    "@google-cloud/translate": "^9.0.1",
     "chrome-types": "^0.1.345"
+  },
+  "devDependencies": {
+    "sharp": "^0.33.5"
   }
 }
