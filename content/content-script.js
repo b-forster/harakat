@@ -55,6 +55,47 @@ function getTranslationAndTransliteration(text) {
     });
 }
 
+// Get speech audio from background script
+function getSpeechAudio(text) {
+    return new Promise((resolve, reject) => {
+        // Check if extension context is valid
+        if (!isExtensionContextValid()) {
+            reject(new Error('Extension context invalidated. Please refresh the page.'));
+            return;
+        }
+
+        chrome.runtime.sendMessage(
+            { action: 'speak', text: text },
+            response => {
+                // Check again after response in case context was invalidated during request
+                if (!isExtensionContextValid()) {
+                    reject(new Error('Extension context invalidated. Please refresh the page.'));
+                    return;
+                }
+
+                if (chrome.runtime.lastError) {
+                    // Check for specific error messages
+                    if (chrome.runtime.lastError.message.includes('Receiving end does not exist')) {
+                        reject(new Error('Background service worker not ready. Try refreshing the page.'));
+                    } else {
+                        reject(new Error(chrome.runtime.lastError.message));
+                    }
+                    return;
+                }
+
+                // Process the response
+                if (response && response.error) {
+                    reject(new Error(response.error));
+                } else if (response && response.audioDataUrl) {
+                    resolve(response.audioDataUrl);
+                } else {
+                    reject(new Error('Invalid response from background script'));
+                }
+            }
+        );
+    });
+}
+
 // Helper function to detect if text is Persian
 function isPersianText(text) {
     // Persian Unicode range: \u0600-\u06FF (Arabic and Persian)
@@ -83,6 +124,58 @@ function getWordAtPosition(element, x, y) {
     }
 
     return null;
+}
+
+// Play audio for a word
+async function playAudio(word) {
+    try {
+        // Get audio data URL from background script
+        const audioDataUrl = await getSpeechAudio(word);
+
+        // Create audio element
+        const audio = new Audio(audioDataUrl);
+
+        // Play audio
+        audio.play();
+
+        // Update play button state
+        const playButton = document.querySelector('.harakat-play-button');
+        if (playButton) {
+            playButton.classList.add('harakat-playing');
+
+            // Reset button state when audio ends
+            audio.onended = () => {
+                playButton.classList.remove('harakat-playing');
+            };
+        }
+    } catch (error) {
+        console.error('Error playing audio:', error);
+
+        // Show error message
+        const errorElement = document.createElement('div');
+        errorElement.className = 'harakat-audio-error';
+        errorElement.textContent = 'Error playing audio';
+
+        // Add to tooltip
+        const tooltip = document.getElementById('harakat-tooltip');
+        if (tooltip) {
+            const content = tooltip.querySelector('.harakat-content');
+            if (content) {
+                // Remove any existing error message
+                const existingError = content.querySelector('.harakat-audio-error');
+                if (existingError) {
+                    existingError.remove();
+                }
+
+                content.appendChild(errorElement);
+
+                // Remove error message after 3 seconds
+                setTimeout(() => {
+                    errorElement.remove();
+                }, 3000);
+            }
+        }
+    }
 }
 
 // Create and show tooltip
@@ -116,11 +209,23 @@ async function showTooltip(word, x, y) {
         if (document.getElementById('harakat-tooltip')) {
             tooltip.innerHTML = `
             <div class="harakat-content">
-              <div class="harakat-word">${word}</div>
+              <div class="harakat-word-container">
+                <div class="harakat-word">${word}</div>
+                <button class="harakat-play-button" title="Listen to pronunciation"></button>
+              </div>
               <div class="harakat-pronunciation">${result.transliteration}</div>
               <div class="harakat-definition">${result.translation}</div>
             </div>
           `;
+
+            // Add event listener to play button
+            const playButton = tooltip.querySelector('.harakat-play-button');
+            if (playButton) {
+                playButton.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent tooltip from closing
+                    playAudio(word);
+                });
+            }
         }
     } catch (error) {
         if (document.getElementById('harakat-tooltip')) {
