@@ -46,3 +46,13 @@ This extension requires a Google Cloud Translation API key to function:
 - JavaScript
 - Chrome Extension APIs
 - Google Translation API
+
+## Acknowledgements
+
+- This project was developed with assistance from Cline AI
+- Icon by [icons8](https://icons8.com/)
+- Inspired by [rikaikun](https://chromewebstore.google.com/detail/rikaikun/jipdnfibhldikgcjhfnomkfpcebammhp) and [Zhongwen](https://chromewebstore.google.com/detail/zhongwen-chinese-english/kkmlkkjojmombglmlpbpapmhcaljjkde)
+
+## Disclaimer
+
+THIS SERVICE MAY CONTAIN TRANSLATIONS POWERED BY GOOGLE. GOOGLE DISCLAIMS ALL WARRANTIES RELATED TO THE TRANSLATIONS, EXPRESS OR IMPLIED, INCLUDING ANY WARRANTIES OF ACCURACY, RELIABILITY, AND ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.

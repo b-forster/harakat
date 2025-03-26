@@ -82,6 +82,16 @@ function getWordAtPosition(element, x, y) {
     return null;
 }
 
+// Get Google Translate footer HTML
+function getGoogleTranslateFooter() {
+    return `
+    <div class="harakat-footer">
+        <a href="http://translate.google.com" target="_blank" class="harakat-attribution">
+            <img src="${chrome.runtime.getURL('assets/images/google-translate.png')}" alt="Powered by Google Translate" class="harakat-google-logo">
+        </a>
+    </div>`;
+}
+
 // Create and show tooltip
 async function showTooltip(word, x, y) {
     // Remove any existing tooltips
@@ -100,6 +110,7 @@ async function showTooltip(word, x, y) {
         <div class="harakat-content">
             <div class="harakat-word">${word}</div>
             <div class="harakat-loading">Loading...</div>
+            ${getGoogleTranslateFooter()}
         </div>
     `;
 
@@ -116,6 +127,7 @@ async function showTooltip(word, x, y) {
               <div class="harakat-word">${word}</div>
               <div class="harakat-pronunciation">Pronunciation placeholder</div>
               <div class="harakat-definition">${translation}</div>
+              ${getGoogleTranslateFooter()}
             </div>
           `;
         }
@@ -127,6 +139,7 @@ async function showTooltip(word, x, y) {
                 <div class="harakat-content">
                   <div class="harakat-word">${word}</div>
                   <div class="harakat-error">Extension reloaded. Please refresh the page.</div>
+                  ${getGoogleTranslateFooter()}
                 </div>
               `;
             } else {
@@ -134,6 +147,7 @@ async function showTooltip(word, x, y) {
                 <div class="harakat-content">
                   <div class="harakat-word">${word}</div>
                   <div class="harakat-error">Error: ${error.message}</div>
+                  ${getGoogleTranslateFooter()}
                 </div>
               `;
             }
