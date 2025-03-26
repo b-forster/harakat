@@ -1,33 +1,64 @@
-// Imports the Google Cloud client library
-const { Translate } = require('@google-cloud/translate').v2;
+// Get API key from global CONFIG object
+// This assumes config.js is loaded before this script
+const API_KEY = self.CONFIG ? self.CONFIG.API_KEY : null;
 
-// Creates a client
-const translate = new Translate();
-
-const text = 'Hello, world!';
-const target = 'fa';
-
-async function detectLanguage() {
-    let [detections] = await translate.detect(text);
-    detections = Array.isArray(detections) ? detections : [detections];
-    console.log('Detections:');
-    detections.forEach(detection => {
-        console.log(`${detection.input} => ${detection.language}`);
-    });
+// Verify API key is available
+if (!API_KEY) {
+    console.error('API key not found. Make sure config.js is loaded before service-worker.js');
 }
 
-detectLanguage();
+// Function to translate text using API key
+async function translateText(text) {
+    try {
+        const response = await fetch(
+            `https://translation.googleapis.com/language/translate/v2?key=${API_KEY}`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    q: text,
+                    source: 'fa',
+                    target: 'en',
+                    format: 'text'
+                })
+            }
+        );
 
-async function translateText() {
-    // Translates the text into the target language. "text" can be a string for
-    // translating a single piece of text, or an array of strings for translating
-    // multiple texts.
-    let [translations] = await translate.translate(text, target);
-    translations = Array.isArray(translations) ? translations : [translations];
-    console.log('Translations:');
-    translations.forEach((translation, i) => {
-        console.log(`${text[i]} => (${target}) ${translation}`);
-    });
+        const data = await response.json();
+
+        if (data.error) {
+            throw new Error(data.error.message || 'Translation error');
+        }
+
+        return data.data.translations[0].translatedText;
+    } catch (error) {
+        throw error;
+    }
 }
 
-translateText();
+// Set up message listener
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'translate') {
+        // Start the translation process
+        translateText(request.text)
+            .then(translation => {
+                sendResponse({ translation });
+            })
+            .catch(error => {
+                sendResponse({ error: error.message });
+            });
+
+        return true; // Required for async sendResponse
+    }
+});
+
+// Service worker lifecycle events
+self.addEventListener('activate', (event) => {
+    self.skipWaiting();
+});
+
+self.addEventListener('install', (event) => {
+    self.skipWaiting();
+});

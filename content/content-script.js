@@ -1,6 +1,57 @@
 // Harakat: Persian Reading Helper
 // Content script that detects Persian text and shows pronunciations and definitions
 
+// Check if extension context is valid
+function isExtensionContextValid() {
+    try {
+        // Try to access chrome.runtime.id - this will throw if context is invalid
+        return !!chrome.runtime.id;
+    } catch (e) {
+        return false;
+    }
+}
+
+// Get translation from background script
+function getTranslation(text) {
+    return new Promise((resolve, reject) => {
+        // Check if extension context is valid
+        if (!isExtensionContextValid()) {
+            reject(new Error('Extension context invalidated. Please refresh the page.'));
+            return;
+        }
+
+        chrome.runtime.sendMessage(
+            { action: 'translate', text: text },
+            response => {
+                // Check again after response in case context was invalidated during request
+                if (!isExtensionContextValid()) {
+                    reject(new Error('Extension context invalidated. Please refresh the page.'));
+                    return;
+                }
+
+                if (chrome.runtime.lastError) {
+                    // Check for specific error messages
+                    if (chrome.runtime.lastError.message.includes('Receiving end does not exist')) {
+                        reject(new Error('Background service worker not ready. Try refreshing the page.'));
+                    } else {
+                        reject(new Error(chrome.runtime.lastError.message));
+                    }
+                    return;
+                }
+
+                // Process the response
+                if (response && response.error) {
+                    reject(new Error(response.error));
+                } else if (response && response.translation) {
+                    resolve(response.translation);
+                } else {
+                    reject(new Error('Invalid response from background script'));
+                }
+            }
+        );
+    });
+}
+
 // Helper function to detect if text is Persian
 function isPersianText(text) {
     // Persian Unicode range: \u0600-\u06FF (Arabic and Persian)
@@ -9,7 +60,7 @@ function isPersianText(text) {
     return persianRegex.test(text);
 }
 
-// Function to get word at position
+// Get word at position
 function getWordAtPosition(element, x, y) {
     const range = document.caretRangeFromPoint(x, y);
     if (!range) return null;
@@ -31,12 +82,12 @@ function getWordAtPosition(element, x, y) {
     return null;
 }
 
-// Function to create and show tooltip
-function showTooltip(word, x, y) {
+// Create and show tooltip
+async function showTooltip(word, x, y) {
     // Remove any existing tooltips
     removeTooltip();
 
-    // Create tooltip element
+    // Create tooltip element with loading state
     const tooltip = document.createElement('div');
     tooltip.id = 'harakat-tooltip';
     tooltip.style.position = 'absolute';
@@ -55,19 +106,39 @@ function showTooltip(word, x, y) {
     // Add to page
     document.body.appendChild(tooltip);
 
-    // In a real implementation, you would call your translation API here
-    // For now, we'll simulate with a timeout
-    setTimeout(() => {
+    try {
+        // Get translation from background script
+        const translation = await getTranslation(word);
+
         if (document.getElementById('harakat-tooltip')) {
             tooltip.innerHTML = `
-                <div class="harakat-content">
-                    <div class="harakat-word">${word}</div>
-                    <div class="harakat-pronunciation">Pronunciation placeholder</div>
-                    <div class="harakat-definition">Definition placeholder</div>
-                </div>
-            `;
+            <div class="harakat-content">
+              <div class="harakat-word">${word}</div>
+              <div class="harakat-pronunciation">Pronunciation placeholder</div>
+              <div class="harakat-definition">${translation}</div>
+            </div>
+          `;
         }
-    }, 500);
+    } catch (error) {
+        if (document.getElementById('harakat-tooltip')) {
+            // Special handling for extension context invalidated
+            if (error.message.includes('Extension context invalidated')) {
+                tooltip.innerHTML = `
+                <div class="harakat-content">
+                  <div class="harakat-word">${word}</div>
+                  <div class="harakat-error">Extension reloaded. Please refresh the page.</div>
+                </div>
+              `;
+            } else {
+                tooltip.innerHTML = `
+                <div class="harakat-content">
+                  <div class="harakat-word">${word}</div>
+                  <div class="harakat-error">Error: ${error.message}</div>
+                </div>
+              `;
+            }
+        }
+    }
 }
 
 // Function to remove tooltip
@@ -80,10 +151,25 @@ function removeTooltip() {
 
 // Check if extension is enabled
 function isExtensionEnabled(callback) {
-    chrome.storage.sync.get(['enabled'], function (result) {
-        const enabled = result.enabled !== undefined ? result.enabled : true;
-        callback(enabled);
-    });
+    // Check if extension context is valid
+    if (!isExtensionContextValid()) {
+        callback(false);
+        return;
+    }
+
+    try {
+        chrome.storage.sync.get(['enabled'], function (result) {
+            if (chrome.runtime.lastError) {
+                callback(false);
+                return;
+            }
+
+            const enabled = result.enabled !== undefined ? result.enabled : true;
+            callback(enabled);
+        });
+    } catch (e) {
+        callback(false);
+    }
 }
 
 // Mouse move handler
@@ -113,5 +199,3 @@ document.addEventListener('click', function (e) {
         removeTooltip();
     }
 });
-
-console.log('Harakat: Persian Reading Helper loaded');

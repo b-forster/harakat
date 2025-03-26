@@ -22,8 +22,18 @@
         "storage"
     ],
     "background": {
-        "service_worker": "background/service-worker.js"
+        "service_worker": "background/background.js"
     },
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "config.js"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
+    ],
     "content_scripts": [
         {
             "matches": [
